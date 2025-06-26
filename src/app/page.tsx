@@ -322,27 +322,85 @@ Here's some \`inline code\` that demonstrates our **bold gradient text** and _be
                             </div>
                         </div>
 
-                        {/* Top Navigation Pills */}
-                        <div className="hidden md:flex items-center space-x-1 bg-gray-700 rounded-lg p-1">
-                            <button className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white rounded-md hover:bg-gray-600 transition-colors">
-                                Editor
-                            </button>
-                            <button className="px-4 py-2 text-sm font-medium bg-emerald-500 text-white rounded-md">
-                                Preview
-                            </button>
-                            <button className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white rounded-md hover:bg-gray-600 transition-colors">
-                                Export
-                            </button>
+                        {/* Stats in center */}
+                        <div className="hidden md:flex items-center space-x-4">
+                            <div className="flex items-center space-x-2 bg-gray-700 rounded-lg px-3 py-1">
+                                <div className="text-sm font-bold text-emerald-400">{readmeText.length}</div>
+                                <div className="text-xs text-gray-400">chars</div>
+                            </div>
+                            <div className="flex items-center space-x-2 bg-gray-700 rounded-lg px-3 py-1">
+                                <div className="text-sm font-bold text-blue-400">{readmeText.split('\n').length}</div>
+                                <div className="text-xs text-gray-400">lines</div>
+                            </div>
+                            <div className="flex items-center space-x-2 bg-gray-700 rounded-lg px-3 py-1">
+                                <div className="text-sm font-bold text-purple-400">{readmeText.split(' ').filter(word => word.length > 0).length}</div>
+                                <div className="text-xs text-gray-400">words</div>
+                            </div>
                         </div>
 
-                        {/* User Actions */}
-                        <div className="flex items-center space-x-3">
-                            <div className="flex items-center space-x-2 bg-gray-700 rounded-lg p-1">
+                        {/* Action Buttons */}
+                        <div className="flex items-center space-x-2">
+                            {/* Mobile dropdown for actions */}
+                            <div className="md:hidden">
+                                <button
+                                    onClick={generatePDF}
+                                    disabled={isGenerating || !readmeText.trim()}
+                                    className="flex items-center px-3 py-2 text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-400 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors"
+                                >
+                                    {isGenerating ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    )}
+                                </button>
+                            </div>
+
+                            {/* Desktop action buttons */}
+                            <div className="hidden md:flex items-center space-x-2">
+                                <button
+                                    onClick={loadSampleMarkdown}
+                                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                                    title="Load Sample"
+                                >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                    </svg>
+                                    Sample
+                                </button>
+
+                                <button
+                                    onClick={clearText}
+                                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                                    title="Clear All"
+                                >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Clear
+                                </button>
+
+                                <button
+                                    onClick={generatePDF}
+                                    disabled={isGenerating || !readmeText.trim()}
+                                    className="flex items-center px-4 py-2 text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-400 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors"
+                                    title="Export PDF"
+                                >
+                                    {isGenerating ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                                    ) : (
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    )}
+                                    {isGenerating ? 'Generating...' : 'Export PDF'}
+                                </button>
+                            </div>
+
+                            <div className="flex items-center space-x-2 bg-gray-700 rounded-lg p-1 ml-2">
                                 <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
                                 <span className="text-sm text-gray-300 pr-2">Live</span>
-                            </div>
-                            <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                                <span className="text-sm font-medium text-white">U</span>
                             </div>
                         </div>
                     </div>
@@ -350,110 +408,6 @@ Here's some \`inline code\` that demonstrates our **bold gradient text** and _be
             </nav>
 
             <div className="flex h-[calc(100vh-64px)]">
-                {/* Sidebar */}
-                <div className="w-72 bg-gray-800 border-r border-gray-700 flex flex-col">
-                    {/* Sidebar Header */}
-                    <div className="p-6 border-b border-gray-700">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-white flex items-center">
-                                <svg className="w-5 h-5 mr-2 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                </svg>
-                                Tools
-                            </h2>
-                        </div>
-                    </div>
-
-                    {/* Stats Cards */}
-                    <div className="p-6 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-gray-700 rounded-lg p-4 card-hover smooth-transition">
-                                <div className="text-2xl font-bold text-emerald-400">{readmeText.length}</div>
-                                <div className="text-xs text-gray-400">Characters</div>
-                            </div>
-                            <div className="bg-gray-700 rounded-lg p-4 card-hover smooth-transition">
-                                <div className="text-2xl font-bold text-blue-400">{readmeText.split('\n').length}</div>
-                                <div className="text-xs text-gray-400">Lines</div>
-                            </div>
-                        </div>
-                        <div className="bg-gray-700 rounded-lg p-4 card-hover smooth-transition">
-                            <div className="text-2xl font-bold text-purple-400">{readmeText.split(' ').filter(word => word.length > 0).length}</div>
-                            <div className="text-xs text-gray-400">Words</div>
-                        </div>
-                    </div>
-
-                    {/* Action Categories */}
-                    <div className="flex-1 px-6 pb-6">
-                        <div className="space-y-2">
-                            <div className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">Actions</div>
-                            
-                            <button
-                                onClick={loadSampleMarkdown}
-                                className="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors group card-hover"
-                            >
-                                <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3 group-hover:bg-emerald-400 transition-colors glow-emerald">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                    </svg>
-                                </div>
-                                <div className="flex-1 text-left">
-                                    <div className="text-sm font-medium">Load Sample</div>
-                                    <div className="text-xs text-gray-500">Example content</div>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={clearText}
-                                className="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors group card-hover"
-                            >
-                                <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center mr-3 group-hover:bg-red-400 transition-colors">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </div>
-                                <div className="flex-1 text-left">
-                                    <div className="text-sm font-medium">Clear All</div>
-                                    <div className="text-xs text-gray-500">Reset editor</div>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={generatePDF}
-                                disabled={isGenerating || !readmeText.trim()}
-                                className="w-full flex items-center px-4 py-3 text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-400 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors group btn-primary"
-                            >
-                                <div className="w-8 h-8 bg-emerald-600 group-hover:bg-emerald-500 disabled:bg-gray-500 rounded-lg flex items-center justify-center mr-3 transition-colors">
-                                    {isGenerating ? (
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    )}
-                                </div>
-                                <div className="flex-1 text-left">
-                                    <div className="text-sm font-medium">{isGenerating ? 'Generating...' : 'Export PDF'}</div>
-                                    <div className="text-xs text-emerald-200">{isGenerating ? 'Please wait' : 'Download ready'}</div>
-                                </div>
-                            </button>
-                        </div>
-
-                        {/* Progress Indicator */}
-                        <div className="mt-8 p-4 bg-gray-700 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-300">Document Status</span>
-                                <span className="text-sm text-emerald-400">Ready</span>
-                            </div>
-                            <div className="w-full bg-gray-600 rounded-full h-2">
-                                <div className={`h-2 rounded-full transition-all duration-300 ${readmeText.trim() ? 'bg-emerald-400' : 'bg-gray-500'}`} style={{ width: readmeText.trim() ? '100%' : '0%' }}></div>
-                            </div>
-                            <div className="mt-2 text-xs text-gray-400">
-                                {readmeText.trim() ? 'Ready to export' : 'Start typing to begin'}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Main Content Area */}
                 <div className="flex-1 flex">
                     {/* Editor Panel */}

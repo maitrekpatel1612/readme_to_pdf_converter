@@ -81,93 +81,89 @@ export async function POST(req: NextRequest) {
         };
 
         const addHeading = (text: string, level: number) => {
-            // Heading styles that match the live preview exactly
+            // Heading styles that match the live preview exactly (further reduced sizes)
             const headingStyles = [
-                { size: 24, color: colors.primary, spacing: 10, underline: true },   // H1 - matches text-3xl
-                { size: 20, color: colors.primary, spacing: 8, underline: false },   // H2 - matches text-2xl  
-                { size: 16, color: colors.primary, spacing: 6, underline: false },   // H3 - matches text-xl
-                { size: 14, color: colors.secondary, spacing: 5, underline: false }, // H4
-                { size: 12, color: colors.secondary, spacing: 4, underline: false }, // H5
-                { size: 11, color: colors.secondary, spacing: 3, underline: false }  // H6
+                { size: 14, color: colors.primary, spacing: 5, underline: true },   // H1 - further reduced from 18
+                { size: 12, color: colors.primary, spacing: 4, underline: false },  // H2 - further reduced from 15  
+                { size: 10, color: colors.primary, spacing: 3, underline: false },  // H3 - further reduced from 13
+                { size: 9, color: colors.secondary, spacing: 2, underline: false }, // H4 - further reduced from 11
+                { size: 8, color: colors.secondary, spacing: 2, underline: false }, // H5 - further reduced from 10
+                { size: 7, color: colors.secondary, spacing: 1, underline: false }   // H6 - further reduced from 9
             ];
             
             const style = headingStyles[Math.min(level - 1, 5)];
             
-            // Add spacing before heading (matches preview margins)
+            // Add spacing before heading (further reduced margins)
             currentY += style.spacing;
             
-            addStyledText(text, style.size, 'bold', style.color, 1.2);
+            addStyledText(text, style.size, 'bold', style.color, 1.1);
             
             // Add underline for H1 (matches border-b-2 in preview)
             if (style.underline) {
                 const textWidth = doc.getTextWidth(text);
                 doc.setDrawColor(colors.border);
-                doc.setLineWidth(0.5);
-                doc.line(margin, currentY - 2, margin + Math.min(textWidth, contentWidth), currentY - 2);
-                currentY += 2;
+                doc.setLineWidth(0.3);
+                doc.line(margin, currentY - 1, margin + Math.min(textWidth, contentWidth), currentY - 1);
+                currentY += 1;
             }
         };
 
         const addCodeBlock = (code: string, language: string = '') => {
             const lines = code.split('\n');
-            const lineHeight = 4.5;
-            const padding = 6;
-            const headerHeight = language ? 8 : 0;
-            const blockHeight = (lines.length * lineHeight) + (padding * 2) + headerHeight;
+            const lineHeight = 2.8; // Further reduced from 3.5
+            const padding = 3; // Further reduced from 5
+            const blockHeight = (lines.length * lineHeight) + (padding * 2);
             
-            addNewPageIfNeeded(blockHeight + 10);
+            addNewPageIfNeeded(blockHeight + 5); // Further reduced margin
             
             // Background rectangle (matches the dark theme in preview)
             doc.setFillColor(30, 41, 59); // slate-800
             doc.rect(margin, currentY, contentWidth, blockHeight, 'F');
             
-            // Language label (matches preview styling)
+            // Language label in top-right corner (much smaller and unobtrusive)
             if (language) {
-                doc.setFillColor(59, 130, 246); // blue-500
-                doc.rect(margin, currentY, Math.min(language.length * 4 + 10, 50), 7, 'F');
-                
-                setFont(8, 'bold', '#ffffff');
-                doc.text(language.toUpperCase(), margin + 3, currentY + 5);
-                currentY += headerHeight;
+                setFont(6, 'normal', '#94a3b8'); // Very small gray text
+                const langWidth = doc.getTextWidth(language.toUpperCase());
+                doc.text(language.toUpperCase(), margin + contentWidth - langWidth - 2, currentY + 8);
             }
             
-            // Code content with monospace font
-            setFont(10, 'normal', colors.codeText);
+            // Code content with monospace font (much smaller)
+            setFont(6, 'normal', colors.codeText); // Further reduced from 8
             doc.setFont('courier', 'normal');
             
             for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].replace(/\t/g, '    '); // Convert tabs to spaces
-                doc.text(line, margin + 4, currentY + padding + (i * lineHeight));
+                const line = lines[i].replace(/\t/g, '  '); // Convert tabs to 2 spaces
+                doc.text(line, margin + 2, currentY + padding + (i * lineHeight)); // Further reduced padding
             }
             
-            currentY += blockHeight - (language ? headerHeight : 0) + 10;
+            currentY += blockHeight + 4; // Further reduced margin
         };
 
         const addTable = (headers: string[], rows: string[][]) => {
             if (!headers.length || !rows.length) return;
             
-            const cellPadding = 4;
-            const rowHeight = 12;
+            const cellPadding = 2; // Further reduced from 3
+            const rowHeight = 8; // Further reduced from 10
             const colWidth = contentWidth / headers.length;
             const tableHeight = (rows.length + 1) * rowHeight;
             
-            addNewPageIfNeeded(tableHeight + 20);
+            addNewPageIfNeeded(tableHeight + 10); // Further reduced margin
             
             // Table border (matches preview border styling)
             doc.setDrawColor(colors.border);
-            doc.setLineWidth(0.5);
+            doc.setLineWidth(0.3);
             doc.rect(margin, currentY, contentWidth, tableHeight);
             
             // Header row (matches gray-50 background in preview)
             doc.setFillColor(249, 250, 251); // gray-50
             doc.rect(margin, currentY, contentWidth, rowHeight, 'F');
             
-            setFont(11, 'bold', colors.primary);
+            setFont(7, 'bold', colors.primary); // Further reduced from 9
             
             for (let i = 0; i < headers.length; i++) {
                 const x = margin + (i * colWidth);
                 const headerText = doc.splitTextToSize(headers[i], colWidth - cellPadding * 2);
-                doc.text(headerText[0] || '', x + cellPadding, currentY + 8);
+                doc.text(headerText[0] || '', x + cellPadding, currentY + 6); // Adjusted position
                 
                 // Column separators
                 if (i > 0) {
@@ -179,7 +175,7 @@ export async function POST(req: NextRequest) {
             currentY += rowHeight;
             
             // Data rows
-            setFont(10, 'normal', colors.secondary);
+            setFont(6, 'normal', colors.secondary); // Further reduced from 8
             
             for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
                 const row = rows[rowIndex];
@@ -191,78 +187,78 @@ export async function POST(req: NextRequest) {
                 for (let colIndex = 0; colIndex < Math.min(row.length, headers.length); colIndex++) {
                     const x = margin + (colIndex * colWidth);
                     const cellText = doc.splitTextToSize(row[colIndex] || '', colWidth - cellPadding * 2);
-                    doc.text(cellText[0] || '', x + cellPadding, currentY + 8);
+                    doc.text(cellText[0] || '', x + cellPadding, currentY + 6); // Adjusted position
                 }
                 
                 currentY += rowHeight;
             }
             
-            currentY += 10;
+            currentY += 5; // Further reduced margin
         };
 
         const addBlockquote = (text: string) => {
-            const lineHeight = 5.5;
-            const padding = 6;
-            const lines = doc.splitTextToSize(text, contentWidth - 25);
+            const lineHeight = 3.5; // Further reduced from 4.5
+            const padding = 3; // Further reduced from 5
+            const lines = doc.splitTextToSize(text, contentWidth - 15); // Further reduced margin
             const blockHeight = (lines.length * lineHeight) + (padding * 2);
             
-            addNewPageIfNeeded(blockHeight + 8);
+            addNewPageIfNeeded(blockHeight + 4); // Further reduced margin
             
             // Left border (matches blue-500 in preview)
             doc.setFillColor(59, 130, 246); // blue-500
-            doc.rect(margin, currentY, 4, blockHeight, 'F');
+            doc.rect(margin, currentY, 2, blockHeight, 'F'); // Further reduced border width
             
             // Background (matches blue-50 in preview)
             doc.setFillColor(239, 246, 255); // blue-50
-            doc.rect(margin + 4, currentY, contentWidth - 4, blockHeight, 'F');
+            doc.rect(margin + 2, currentY, contentWidth - 2, blockHeight, 'F');
             
             // Text with italic styling (matches preview)
-            setFont(11, 'normal', colors.secondary);
+            setFont(7, 'normal', colors.secondary); // Further reduced from 9
             doc.setFont('helvetica', 'italic'); // Add italic style
             
             for (let i = 0; i < lines.length; i++) {
-                doc.text(lines[i], margin + 10, currentY + padding + (i * lineHeight));
+                doc.text(lines[i], margin + 6, currentY + padding + (i * lineHeight)); // Further reduced padding
             }
             
-            currentY += blockHeight + 8;
+            currentY += blockHeight + 4; // Further reduced margin
         };
 
         const addList = (items: string[], ordered: boolean = false, level: number = 0) => {
-            setFont(11, 'normal', colors.secondary);
-            const indent = level * 8; // Matches preview indentation
+            setFont(7, 'normal', colors.secondary); // Further reduced from 9
+            const indent = level * 4; // Further reduced from 6
             
             for (let i = 0; i < items.length; i++) {
                 const bullet = ordered ? `${i + 1}.` : '•';
                 const itemText = `${bullet} ${items[i]}`;
-                const lines = doc.splitTextToSize(itemText, contentWidth - 20 - indent);
-                const lineHeight = 5.5;
+                const lines = doc.splitTextToSize(itemText, contentWidth - 10 - indent); // Further reduced margin
+                const lineHeight = 3.5; // Further reduced from 4.5
                 
-                addNewPageIfNeeded(lines.length * lineHeight + 3);
+                addNewPageIfNeeded(lines.length * lineHeight + 1); // Further reduced margin
                 
                 for (let j = 0; j < lines.length; j++) {
-                    const x = j === 0 ? margin + indent : margin + 15 + indent;
+                    const x = j === 0 ? margin + indent : margin + 8 + indent; // Further reduced indent
                     doc.text(lines[j], x, currentY + (j * lineHeight));
                 }
                 
-                currentY += lines.length * lineHeight + 3;
+                currentY += lines.length * lineHeight + 1; // Further reduced spacing
             }
             
-            currentY += 2; // Extra spacing after list
+            currentY += 1; // Minimal extra spacing after list
         };
 
         // Document header (matches the professional look of the preview)
-        setFont(28, 'bold', colors.accent);
+        setFont(16, 'bold', colors.accent); // Further reduced from 20
         doc.text('📄 README Document', margin, currentY);
-        currentY += 12;
+        currentY += 8; // Further reduced from 10
 
-        setFont(10, 'normal', colors.muted);
+        setFont(7, 'normal', colors.muted); // Further reduced from 8
         doc.text(`Generated on ${new Date().toLocaleDateString('en-US', { 
             weekday: 'long', 
             year: 'numeric', 
             month: 'long', 
             day: 'numeric' 
         })}`, margin, currentY);
-        currentY += 20;
+        currentY += 12; // Further reduced from 15
 
         // Parse and render markdown exactly like the preview
         const tokens = md.parse(text, {});
@@ -293,37 +289,37 @@ export async function POST(req: NextRequest) {
                             if (part.startsWith('**') && part.endsWith('**')) {
                                 // Bold text
                                 const boldText = part.slice(2, -2);
-                                addStyledText(boldText, 11, 'bold', colors.secondary, 1.6);
+                                addStyledText(boldText, 7, 'bold', colors.secondary, 1.3); // Further reduced sizes
                             } else if (part.startsWith('*') && part.endsWith('*') && !part.startsWith('**')) {
                                 // Italic text
                                 const italicText = part.slice(1, -1);
-                                setFont(11, 'normal', colors.secondary);
+                                setFont(7, 'normal', colors.secondary); // Further reduced from 9
                                 doc.setFont('helvetica', 'italic');
                                 const lines = doc.splitTextToSize(italicText, contentWidth);
-                                const lineHeight = 11 * 0.35 * 1.6;
+                                const lineHeight = 7 * 0.35 * 1.3; // Adjusted line height
                                 
-                                addNewPageIfNeeded(lines.length * lineHeight + 4);
+                                addNewPageIfNeeded(lines.length * lineHeight + 2); // Further reduced margin
                                 
                                 for (let k = 0; k < lines.length; k++) {
                                     doc.text(lines[k], margin, currentY + (k * lineHeight));
                                 }
-                                currentY += lines.length * lineHeight + 4;
+                                currentY += lines.length * lineHeight + 2; // Further reduced margin
                             } else if (part.startsWith('`') && part.endsWith('`')) {
                                 // Inline code
                                 const codeText = part.slice(1, -1);
-                                setFont(10, 'normal', colors.accent);
+                                setFont(6, 'normal', colors.accent); // Further reduced from 8
                                 doc.setFont('courier', 'normal');
                                 doc.text(codeText, margin, currentY);
-                                currentY += 6;
+                                currentY += 4; // Further reduced from 5
                             } else if (part.trim()) {
                                 // Regular text
-                                addStyledText(part, 11, 'normal', colors.secondary, 1.6);
+                                addStyledText(part, 7, 'normal', colors.secondary, 1.3); // Further reduced from 9
                             }
                         }
                         
                         // If no special formatting, add as regular text
                         if (!content.includes('**') && !content.includes('*') && !content.includes('`')) {
-                            addStyledText(content, 11, 'normal', colors.secondary, 1.6);
+                            addStyledText(content, 7, 'normal', colors.secondary, 1.3); // Further reduced from 9
                         }
                         
                         i++; // Skip the inline token
@@ -400,11 +396,11 @@ export async function POST(req: NextRequest) {
                     break;
                     
                 case 'hr':
-                    currentY += 8;
+                    currentY += 4; // Further reduced from 6
                     doc.setDrawColor(colors.border);
-                    doc.setLineWidth(0.5);
+                    doc.setLineWidth(0.3);
                     doc.line(margin, currentY, margin + contentWidth, currentY);
-                    currentY += 12;
+                    currentY += 6; // Further reduced from 10
                     break;
             }
         }
@@ -420,7 +416,7 @@ export async function POST(req: NextRequest) {
             doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
             
             // Page number
-            setFont(8, 'normal', colors.muted);
+            setFont(6, 'normal', colors.muted); // Further reduced footer text
             doc.text(
                 `Page ${pageNum} of ${totalPages}`, 
                 pageWidth / 2, 
