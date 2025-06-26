@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://pdfmyreadme.maitrekpatel.tech
+
+# Crawl delay for search engines
+Crawl-delay: 1
+
+# Disallow admin or private areas (if any)
+Disallow: /api/
