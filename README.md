@@ -1,6 +1,8 @@
-# 📄 README to PDF Converter
+# 📄 PDFMyReadme - Transform Markdown to PDF & DOCX
 
-A beautiful, modern web application that converts README files (and any text with basic Markdown formatting) into professional-looking PDF documents.
+![PDFMyReadme Banner](image.png)
+
+A beautiful, modern web application that converts README files and Markdown documents into professional-looking PDF and DOCX documents instantly. Real-time preview, modern design, and perfect formatting for documentation, portfolios, and reports.
 
 ![Next.js](https://img.shields.io/badge/Next.js-15.3.4-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
@@ -11,11 +13,14 @@ A beautiful, modern web application that converts README files (and any text wit
 - 🎨 **Beautiful Modern UI** - Clean, responsive design with Tailwind CSS
 - 📝 **Markdown Support** - Handles headings, lists, bold text, and code blocks
 - 📄 **Professional PDFs** - Well-formatted output with proper typography
-- 🚀 **Fast & Reliable** - Built with Next.js 15 and TypeScript
-- 🔄 **Real-time Preview** - Character count and instant feedback
+- � **DOCX Export** - Convert to Microsoft Word documents
+- �🚀 **Fast & Reliable** - Built with Next.js 15 and TypeScript
+- 🔄 **Real-time Preview** - Live markdown preview as you type
 - 📱 **Responsive Design** - Works perfectly on desktop and mobile
 - 🎯 **Error Handling** - Comprehensive error states and loading indicators
 - 🎪 **Sample Content** - Built-in sample markdown to get started quickly
+- 🌐 **No Registration Required** - Use instantly without signing up
+- 💰 **Free to Use** - Completely free online tool
 
 ## 🚀 Getting Started
 
@@ -29,7 +34,7 @@ A beautiful, modern web application that converts README files (and any text wit
 1. Clone the repository:
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/maitrekpatel/pdfmyreadme.git
 cd readme_to_pdf_converter
 ```
 
@@ -59,8 +64,8 @@ pnpm dev
 
 1. **Enter Text**: Paste your README content or any markdown text into the textarea
 2. **Try Sample**: Click "Load Sample" to see an example of formatted content
-3. **Generate PDF**: Click the "Generate PDF" button to create your document
-4. **Download**: Click "Download PDF" to save the generated file
+3. **Generate PDF/DOCX**: Choose between PDF or DOCX format and click generate
+4. **Download**: Click the download button to save your generated document
 
 ### Supported Markdown Features
 
@@ -78,19 +83,24 @@ pnpm dev
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
 - **PDF Generation**: [PDFKit](https://pdfkit.org/)
+- **DOCX Generation**: [docx](https://www.npmjs.com/package/docx)
 - **Linting**: ESLint with Next.js config
 
 ## 📁 Project Structure
 
-```
+```text
 src/
 ├── app/
-│   ├── api/generate-pdf/
-│   │   └── route.ts          # PDF generation API endpoint
-│   ├── globals.css           # Global styles and Tailwind imports
-│   ├── layout.tsx            # Root layout component
-│   └── page.tsx              # Main page component
-└── ...
+│   ├── api/
+│   │   ├── generate-pdf/
+│   │   │   └── route.ts          # PDF generation API endpoint
+│   │   └── generate-doc/
+│   │       └── route.ts          # DOCX generation API endpoint
+│   ├── globals.css               # Global styles and Tailwind imports
+│   ├── layout.tsx                # Root layout component
+│   └── page.tsx                  # Main page component
+└── components/
+    └── NoSSR.tsx                 # Client-side rendering wrapper
 ```
 
 ## 🔧 API Reference
@@ -98,6 +108,10 @@ src/
 ### POST `/api/generate-pdf`
 
 Generates a PDF from the provided text content.
+
+### POST `/api/generate-doc`
+
+Generates a DOCX document from the provided text content.
 
 **Request Body:**
 
@@ -109,7 +123,7 @@ Generates a PDF from the provided text content.
 
 **Response:**
 
-- **Success**: PDF file as binary stream
+- **Success**: PDF/DOCX file as binary stream
 - **Error**: JSON with error message
 
 ## 🎨 Customization
@@ -128,42 +142,13 @@ Generates a PDF from the provided text content.
   - Page layout
   - Markdown parsing logic
 
-## 🚀 Deployment
+### DOCX Formatting
 
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Connect your repository to [Vercel](https://vercel.com)
-3. Deploy with one click
-
-### Other Platforms
-
-The app can be deployed to any platform that supports Next.js:
-
-- Netlify
-- Railway
-- DigitalOcean App Platform
-- Self-hosted with PM2
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**PDF generation fails:**
-
-- Check that all dependencies are installed
-- Ensure the API route is accessible
-- Verify that the text content is not empty
-
-**Styling issues:**
-
-- Make sure Tailwind CSS is properly configured
-- Check that `globals.css` is imported in the layout
-
-**TypeScript errors:**
-
-- Run `npm run lint` to check for issues
-- Ensure all type definitions are installed
+- Edit `src/app/api/generate-doc/route.ts` to customize:
+  - Document styles
+  - Paragraph formatting
+  - Header and footer options
+  - Markdown to DOCX conversion
 
 ## 🤝 Contributing
 
@@ -179,13 +164,8 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 This project is open source and available under the [MIT License](LICENSE).
 
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) - The React framework for production
-- [PDFKit](https://pdfkit.org/) - JavaScript PDF generation library
-- [Tailwind CSS](https://tailwindcss.com/) - A utility-first CSS framework
-- [Vercel](https://vercel.com/) - Platform for frontend frameworks and static sites
-
 ---
 
-Made with ❤️ for the Open-source community by Maitrek Patel
+**🌐 Website**: [https://pdfmyreadme.maitrekpatel.tech](https://pdfmyreadme.maitrekpatel.tech)
+
+Made with ❤️ for the developer community by [Maitrek Patel](https://maitrekpatel.tech)
