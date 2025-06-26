@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 20;
+        const margin = 25; // Increased margin from 20 to 25
         const contentWidth = pageWidth - (margin * 2);
         let currentY = margin;
 
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
         // Helper functions
         const addNewPageIfNeeded = (requiredHeight: number = 15) => {
-            if (currentY + requiredHeight > pageHeight - 30) {
+            if (currentY + requiredHeight > pageHeight - 35) { // Increased bottom margin from 30 to 35
                 doc.addPage();
                 currentY = margin;
                 return true;

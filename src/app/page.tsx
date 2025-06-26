@@ -18,9 +18,13 @@ interface MarkdownComponentProps {
 export default function Home() {
     const [readmeText, setReadmeText] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
+    const [leftPanelWidth, setLeftPanelWidth] = useState(50); // Percentage width
+    const [isDragging, setIsDragging] = useState(false);
     const previewRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Fix hydration mismatch by ensuring client-side only rendering
     useEffect(() => {
@@ -94,29 +98,100 @@ export default function Home() {
         }
     }, [readmeText]);
 
+    // Handle draggable separator
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+        
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!containerRef.current) return;
+            
+            const containerRect = containerRef.current.getBoundingClientRect();
+            const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+            
+            // Constrain between 20% and 80%
+            const constrainedWidth = Math.min(80, Math.max(20, newLeftWidth));
+            setLeftPanelWidth(constrainedWidth);
+        };
+        
+        const handleMouseUp = () => {
+            setIsDragging(false);
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+        
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    }, []);
+
+    const generateDocument = useCallback(async () => {
+        if (!readmeText.trim()) {
+            setError("Please enter some text to convert");
+            return;
+        }
+
+        setIsGeneratingDoc(true);
+        setError(null);
+        
+        try {
+            const response = await fetch('/api/generate-doc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    content: readmeText,
+                    title: 'README Document'
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'README.docx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+        } catch (err) {
+            console.error('Document generation error:', err);
+            setError(err instanceof Error ? err.message : "Failed to generate document");
+        } finally {
+            setIsGeneratingDoc(false);
+        }
+    }, [readmeText]);
+
     const clearText = useCallback(() => {
         setReadmeText("");
         setError(null);
     }, []);
 
     const loadSampleMarkdown = useCallback(() => {
-        const sampleText = `# 🚀 MarkdownPDF - Professional Document Generator
+        const sampleText = `# 🚀 PDFMyReadme - Professional Document Generator
 
 ## 📊 Dashboard Overview
 
-Transform your **markdown content** into _stunning PDFs_ with our advanced conversion engine.
+Transform your **markdown content** into _stunning PDFs and documents_ with our advanced conversion engine.
 
 ### ✨ Premium Features
 
 - 🎯 **Real-time WYSIWYG Preview** - See your content exactly as it will appear
 - 🎨 **Modern Glass Morphism UI** - Beautiful, cutting-edge interface design  
 - 🚀 **Instant PDF Generation** - One-click conversion with perfect fidelity
-- � **Advanced Code Highlighting** - Syntax highlighting for 100+ languages
+- 📄 **Document Export** - Generate both PDF and DOCX formats
+- 💻 **Advanced Code Highlighting** - Syntax highlighting for 100+ languages
 - 📊 **Beautiful Tables** - Professional table styling with hover effects
-- � **Gradient Typography** - Eye-catching text effects throughout
+- ✨ **Gradient Typography** - Eye-catching text effects throughout
 - ⚡ **Micro-interactions** - Smooth animations and delightful user experience
 
-### � Code Showcase
+### 💻 Code Showcase
 
 Experience our advanced syntax highlighting:
 
@@ -152,13 +227,14 @@ result = process_data(sample_data)
 print(f"Processing complete: {result.shape}")
 \`\`\`
 
-### � Feature Comparison Table
+### 📊 Feature Comparison Table
 
-| Feature | Basic Editor | **MarkdownPDF** | Premium Tools |
+| Feature | Basic Editor | **PDFMyReadme** | Premium Tools |
 |---------|-------------|-----------------|---------------|
 | Real-time Preview | ❌ | ✅ **Instant** | ✅ |
 | Modern UI | ❌ | ✅ **Glass Design** | ⚠️ |
 | PDF Quality | ⚠️ Basic | ✅ **Perfect** | ✅ |
+| DOCX Export | ❌ | ✅ **Advanced** | ✅ |
 | Code Highlighting | ❌ | ✅ **Advanced** | ✅ |
 | Micro-interactions | ❌ | ✅ **Smooth** | ⚠️ |
 | Price | Free | ✅ **Free** | 💰 $$$$ |
@@ -199,17 +275,34 @@ Here's some \`inline code\` that demonstrates our **bold gradient text** and _be
             return !inline && match ? (
                 <NoSSR 
                     fallback={
-                        <pre className="bg-gray-900 text-gray-100 p-6 rounded-xl overflow-x-auto shadow-lg border border-gray-200">
+                        <pre className="bg-gray-900 text-gray-100 p-6 rounded-xl overflow-x-auto shadow-lg border border-gray-200" spellCheck="false">
                             <code className="text-sm font-mono">{children}</code>
                         </pre>
                     }
                 >
-                    <div className="relative my-6">
+                    <div className="relative my-6" spellCheck="false">
+                        {/* Beautiful Language Indicator */}
+                        <div className="absolute -top-0 right-4 z-10 language-indicator">
+                            <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 px-3 py-1.5 rounded-b-lg text-white text-xs font-bold uppercase tracking-wider shadow-xl border-t-0 border-l border-r border-b border-white/20 backdrop-blur-sm animate-gradient">
+                                <div className="flex items-center space-x-1.5">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm2 2a1 1 0 000 2h.01a1 1 0 100-2H5zm3 0a1 1 0 000 2h3a1 1 0 100-2H8z" clipRule="evenodd" />
+                                    </svg>
+                                    <span>{match[1]}</span>
+                                </div>
+                            </div>
+                        </div>
                         <SyntaxHighlighter
                             style={vscDarkPlus}
                             language={match[1]}
                             PreTag="div"
-                            className="rounded-xl !mt-0 shadow-lg border border-gray-200"
+                            className="rounded-xl !mt-0 shadow-lg border border-gray-200 [&_*]:!text-decoration-none"
+                            customStyle={{
+                                textDecoration: 'none',
+                                textDecorationLine: 'none',
+                                WebkitTextDecorationLine: 'none',
+                                paddingTop: '3rem' // Add padding to make room for language indicator
+                            }}
                             {...props}
                         >
                             {String(children).replace(/\n$/, '')}
@@ -304,67 +397,92 @@ Here's some \`inline code\` that demonstrates our **bold gradient text** and _be
         ),
     }), []);
 
+    // Update CSS custom properties via useEffect
+    useEffect(() => {
+        if (containerRef.current) {
+            containerRef.current.style.setProperty('--left-width', `${leftPanelWidth}%`);
+            containerRef.current.style.setProperty('--right-width', `${100 - leftPanelWidth}%`);
+        }
+    }, [leftPanelWidth]);
+
     return (
-        <div className="min-h-screen bg-gray-900 text-white">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white" ref={containerRef}>
             {/* Top Navigation Bar */}
-            <nav className="bg-gray-800 border-b border-gray-700">
+            <nav className="bg-black/20 backdrop-blur-xl border-b border-white/10 shadow-2xl">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         {/* Logo & Brand */}
                         <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                                <div className="w-8 h-8 bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25 ring-2 ring-white/20">
                                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                 </div>
-                                <span className="text-xl font-bold text-white">MarkdownPDF</span>
+                                <span className="text-xl font-bold bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">PDFMyReadme</span>
                             </div>
                         </div>
 
                         {/* Stats in center */}
-                        <div className="hidden md:flex items-center space-x-4">
-                            <div className="flex items-center space-x-2 bg-gray-700 rounded-lg px-3 py-1">
+                        <div className="hidden md:flex items-center space-x-3">
+                            <div className="flex items-center space-x-2 bg-emerald-500/10 backdrop-blur rounded-xl px-4 py-2 border border-emerald-500/20 shadow-lg shadow-emerald-500/10">
                                 <div className="text-sm font-bold text-emerald-400">{readmeText.length}</div>
-                                <div className="text-xs text-gray-400">chars</div>
+                                <div className="text-xs text-emerald-300">chars</div>
                             </div>
-                            <div className="flex items-center space-x-2 bg-gray-700 rounded-lg px-3 py-1">
+                            <div className="flex items-center space-x-2 bg-blue-500/10 backdrop-blur rounded-xl px-4 py-2 border border-blue-500/20 shadow-lg shadow-blue-500/10">
                                 <div className="text-sm font-bold text-blue-400">{readmeText.split('\n').length}</div>
-                                <div className="text-xs text-gray-400">lines</div>
+                                <div className="text-xs text-blue-300">lines</div>
                             </div>
-                            <div className="flex items-center space-x-2 bg-gray-700 rounded-lg px-3 py-1">
+                            <div className="flex items-center space-x-2 bg-purple-500/10 backdrop-blur rounded-xl px-4 py-2 border border-purple-500/20 shadow-lg shadow-purple-500/10">
                                 <div className="text-sm font-bold text-purple-400">{readmeText.split(' ').filter(word => word.length > 0).length}</div>
-                                <div className="text-xs text-gray-400">words</div>
+                                <div className="text-xs text-purple-300">words</div>
                             </div>
                         </div>
 
                         {/* Action Buttons */}
                         <div className="flex items-center space-x-2">
                             {/* Mobile dropdown for actions */}
-                            <div className="md:hidden">
-                                <button
-                                    onClick={generatePDF}
-                                    disabled={isGenerating || !readmeText.trim()}
-                                    className="flex items-center px-3 py-2 text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-400 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors"
-                                >
-                                    {isGenerating ? (
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    )}
-                                </button>
+                            <div className="md:hidden relative">
+                                <div className="flex items-center space-x-1">
+                                    <button
+                                        onClick={generateDocument}
+                                        disabled={isGeneratingDoc || !readmeText.trim()}
+                                        className="flex items-center px-2 py-2 text-sm font-medium bg-blue-500 text-white hover:bg-blue-400 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors"
+                                        title="Export DOCX"
+                                    >
+                                        {isGeneratingDoc ? (
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={generatePDF}
+                                        disabled={isGenerating || !readmeText.trim()}
+                                        className="flex items-center px-2 py-2 text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-400 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors"
+                                        title="Export PDF"
+                                    >
+                                        {isGenerating ? (
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Desktop action buttons */}
-                            <div className="hidden md:flex items-center space-x-2">
+                            <div className="hidden md:flex items-center space-x-3">
                                 <button
                                     onClick={loadSampleMarkdown}
-                                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                                    className="flex items-center px-4 py-2.5 text-sm font-medium text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all duration-300 backdrop-blur shadow-lg"
                                     title="Load Sample"
                                 >
-                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                     </svg>
                                     Sample
@@ -372,73 +490,84 @@ Here's some \`inline code\` that demonstrates our **bold gradient text** and _be
 
                                 <button
                                     onClick={clearText}
-                                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                                    className="flex items-center px-4 py-2.5 text-sm font-medium text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all duration-300 backdrop-blur shadow-lg"
                                     title="Clear All"
                                 >
-                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
                                     Clear
                                 </button>
 
                                 <button
+                                    onClick={generateDocument}
+                                    disabled={isGeneratingDoc || !readmeText.trim()}
+                                    className="flex items-center px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-400 hover:to-purple-500 disabled:from-gray-600 disabled:to-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded-xl transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 border border-blue-400/20"
+                                    title="Export Document"
+                                >
+                                    {isGeneratingDoc ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                    ) : (
+                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    )}
+                                    {isGeneratingDoc ? 'Generating...' : 'Export DOCX'}
+                                </button>
+
+                                <button
                                     onClick={generatePDF}
                                     disabled={isGenerating || !readmeText.trim()}
-                                    className="flex items-center px-4 py-2 text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-400 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors"
+                                    className="flex items-center px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500 disabled:from-gray-600 disabled:to-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed rounded-xl transition-all duration-300 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 border border-emerald-400/20"
                                     title="Export PDF"
                                 >
                                     {isGenerating ? (
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                                     ) : (
-                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                     )}
                                     {isGenerating ? 'Generating...' : 'Export PDF'}
                                 </button>
                             </div>
-
-                            <div className="flex items-center space-x-2 bg-gray-700 rounded-lg p-1 ml-2">
-                                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                                <span className="text-sm text-gray-300 pr-2">Live</span>
-                            </div>
                         </div>
                     </div>
                 </div>
             </nav>
 
-            <div className="flex h-[calc(100vh-64px)]">
+            <div className="flex flex-col lg:flex-row h-[calc(100vh-64px)]" ref={containerRef}>
                 {/* Main Content Area */}
-                <div className="flex-1 flex">
+                <div className="flex-1 flex flex-col lg:flex-row relative">
                     {/* Editor Panel */}
-                    <div className="flex-1 flex flex-col bg-gray-850">
+                    <div className="panel-left flex flex-col bg-gray-850 lg:min-h-0">
                         {/* Editor Header */}
-                        <div className="flex items-center justify-between px-6 py-4 bg-gray-800 border-b border-gray-700">
+                        <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 bg-gray-800/50 backdrop-blur border-b border-gray-700/50">
                             <div className="flex items-center space-x-3">
-                                <div className="w-6 h-6 bg-blue-500 rounded-lg flex items-center justify-center">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="w-5 h-5 lg:w-6 lg:h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center shadow-lg">
+                                    <svg className="w-3 h-3 lg:w-4 lg:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-medium text-white">Markdown Editor</h3>
-                                    <p className="text-xs text-gray-400">Write your content</p>
+                                    <p className="text-xs text-gray-400 hidden lg:block">Write your content</p>
                                 </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <div className="px-3 py-1 bg-gray-700 rounded-full text-xs text-gray-300">
+                                <div className="px-2 lg:px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs text-blue-400 font-medium">
                                     Markdown
                                 </div>
-                                <div className="px-3 py-1 bg-gray-700 rounded-full text-xs text-gray-300">
+                                <div className="hidden lg:block px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-xs text-emerald-400 font-medium">
                                     Auto-save
                                 </div>
                             </div>
                         </div>
 
                         {/* Editor Content */}
-                        <div className="flex-1 p-6">
+                        <div className="flex-1 p-3 lg:p-6">
                             <textarea
-                                className="w-full h-full bg-gray-900 border border-gray-700 rounded-lg p-4 text-gray-100 placeholder-gray-500 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent smooth-transition custom-scrollbar"
+                                className="w-full h-full bg-gray-900/50 backdrop-blur border border-gray-700/50 rounded-lg p-3 lg:p-4 text-gray-100 placeholder-gray-500 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 smooth-transition custom-scrollbar shadow-lg"
                                 placeholder="# Start writing your markdown here...
 
 ## Features
@@ -449,30 +578,41 @@ Here's some \`inline code\` that demonstrates our **bold gradient text** and _be
 Write something amazing! ✨"
                                 value={readmeText}
                                 onChange={(e) => setReadmeText(e.target.value)}
+                                spellCheck="false"
                             />
                         </div>
                     </div>
 
+                    {/* Draggable Separator */}
+                    <div 
+                        className={`separator hidden lg:flex ${isDragging ? 'dragging' : ''}`}
+                        onMouseDown={handleMouseDown}
+                    >
+                        <div className="separator-handle"></div>
+                        <div className="separator-tooltip">
+                            Drag to resize panels
+                        </div>
+                    </div>
+
                     {/* Preview Panel */}
-                    <div className="flex-1 flex flex-col bg-white border-l border-gray-700">
+                    <div className="panel-right flex flex-col bg-white border-l border-gray-700/50 lg:min-h-0">
                         {/* Preview Header */}
-                        <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 bg-gray-50/80 backdrop-blur border-b border-gray-200/50">
                             <div className="flex items-center space-x-3">
-                                <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="w-5 h-5 lg:w-6 lg:h-6 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center shadow-lg">
+                                    <svg className="w-3 h-3 lg:w-4 lg:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-medium text-gray-900">Live Preview</h3>
-                                    <p className="text-xs text-gray-500">WYSIWYG output</p>
+                                    <h3 className="text-sm font-medium text-gray-900">Real-time Preview</h3>
+                                    <p className="text-xs text-gray-500 hidden lg:block">WYSIWYG output</p>
                                 </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <div className="flex items-center space-x-1 px-3 py-1 bg-emerald-100 rounded-full">
-                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                                    <span className="text-xs text-emerald-700 font-medium">Live</span>
+                                <div className="px-2 lg:px-3 py-1 bg-emerald-100/80 border border-emerald-200/50 rounded-full text-xs text-emerald-700 font-medium">
+                                    Preview Mode
                                 </div>
                             </div>
                         </div>
@@ -480,7 +620,7 @@ Write something amazing! ✨"
                         {/* Preview Content */}
                         <div className="flex-1 overflow-auto bg-white custom-scrollbar">
                             {error && (
-                                <div className="m-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <div className="m-3 lg:m-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                                     <div className="flex items-center">
                                         <div className="w-5 h-5 text-red-400 mr-2">
                                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -495,7 +635,7 @@ Write something amazing! ✨"
                                 </div>
                             )}
 
-                            <div className="p-8" ref={previewRef}>
+                            <div className="p-4 lg:p-8" ref={previewRef}>
                                 {readmeText.trim() ? (
                                     <div className="prose prose-lg max-w-none prose-enhanced">
                                         {isMounted ? (
@@ -516,15 +656,17 @@ Write something amazing! ✨"
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center justify-center h-full text-center py-20">
-                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 glow-emerald">
-                                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 via-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mb-8 shadow-2xl ring-4 ring-white/50 relative overflow-hidden float-animation">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 via-blue-400/20 to-purple-400/20 animate-pulse"></div>
+                                            <svg className="w-12 h-12 text-emerald-600 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
                                         </div>
-                                        <h3 className="text-lg font-medium text-gray-900 mb-2">Start Writing</h3>
-                                        <p className="text-gray-600 mb-4">Your markdown will appear here as you type</p>
-                                        <div className="px-4 py-2 bg-emerald-50 rounded-lg text-emerald-700 text-sm font-medium">
-                                            💡 Try loading a sample to get started
+                                        <h3 className="text-2xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">Start Creating</h3>
+                                        <p className="text-gray-600 mb-8 max-w-md leading-relaxed">Transform your markdown into beautiful documents. Watch your content come to life with real-time preview!</p>
+                                        <div className="px-8 py-4 bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 rounded-xl text-emerald-700 text-sm font-medium border-2 border-emerald-200 shadow-lg relative overflow-hidden">
+                                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-blue-400/10 to-purple-400/10 animate-pulse"></div>
+                                            <div className="relative z-10">💡 Try loading a sample to get started</div>
                                         </div>
                                     </div>
                                 )}
